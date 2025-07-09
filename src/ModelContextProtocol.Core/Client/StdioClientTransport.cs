@@ -56,12 +56,18 @@ public sealed partial class StdioClientTransport : IClientTransport
         string command = _options.Command;
         IList<string>? arguments = _options.Arguments;
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&
-            !string.Equals(Path.GetFileName(command), "cmd.exe", StringComparison.OrdinalIgnoreCase))
+            !string.Equals(Path.GetFileName(command), "powershell.exe", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(Path.GetFileName(command), "pwsh.exe", StringComparison.OrdinalIgnoreCase))
         {
-            // On Windows, for stdio, we need to wrap non-shell commands with cmd.exe /c {command} (usually npx or uvicorn).
-            // The stdio transport will not work correctly if the command is not run in a shell.
-            arguments = arguments is null or [] ? ["/c", command] : ["/c", command, ..arguments];
-            command = "cmd.exe";
+            // On Windows, for stdio, we need to wrap non-shell commands in a shell.
+            var originalCommand = command;
+            command = "powershell.exe";
+
+            var allArgs = arguments is null or [] ? new List<string>() : new List<string>(arguments);
+            allArgs.Insert(0, originalCommand);
+
+            var commandLine = string.Join(" ", allArgs); 
+            arguments = new[] { "-Command", commandLine };
         }
 
         ILogger logger = (ILogger?)_loggerFactory?.CreateLogger<StdioClientTransport>() ?? NullLogger.Instance;
@@ -78,7 +84,7 @@ public sealed partial class StdioClientTransport : IClientTransport
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
-                CreateNoWindow = true,
+                CreateNoWindow = false,
                 WorkingDirectory = _options.WorkingDirectory ?? Environment.CurrentDirectory,
                 StandardOutputEncoding = noBomUTF8,
                 StandardErrorEncoding = noBomUTF8,
