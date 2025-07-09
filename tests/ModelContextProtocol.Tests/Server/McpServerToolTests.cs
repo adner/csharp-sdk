@@ -7,6 +7,7 @@ using ModelContextProtocol.Server;
 using ModelContextProtocol.Tests.Utils;
 using Moq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -17,6 +18,13 @@ namespace ModelContextProtocol.Tests.Server;
 
 public partial class McpServerToolTests
 {
+    public McpServerToolTests()
+    {
+#if !NET
+        Assert.SkipWhen(RuntimeInformation.IsOSPlatform(OSPlatform.Windows), "https://github.com/modelcontextprotocol/csharp-sdk/issues/587");
+#endif
+    }
+
     [Fact]
     public void Create_InvalidArgs_Throws()
     {
@@ -525,7 +533,7 @@ public partial class McpServerToolTests
         Assert.Null(tool.ProtocolTool.OutputSchema);
         Assert.Null(result.StructuredContent);
 
-        tool = McpServerTool.Create(() => ValueTask.CompletedTask);
+        tool = McpServerTool.Create(() => default(ValueTask));
         request = new RequestContext<CallToolRequestParams>(mockServer.Object)
         {
             Params = new CallToolRequestParams { Name = "tool" },
