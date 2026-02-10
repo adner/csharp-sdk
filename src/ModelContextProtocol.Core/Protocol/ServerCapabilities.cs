@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using ModelContextProtocol.Server;
 
@@ -18,6 +19,17 @@ namespace ModelContextProtocol.Protocol;
 /// </remarks>
 public sealed class ServerCapabilities
 {
+    /// <summary>
+    /// Gets or sets extensions supported by the server.
+    /// </summary>
+    /// <remarks>
+    /// Extensions are optional additions to the MCP specification, negotiated during
+    /// initialization via the capabilities object. Each key is an extension identifier
+    /// (e.g., "io.modelcontextprotocol/ui") and the value is extension-specific settings.
+    /// </remarks>
+    [JsonPropertyName("extensions")]
+    public JsonObject? Extensions { get; set; }
+
     /// <summary>
     /// Gets or sets experimental, non-standard capabilities that the server supports.
     /// </summary>
